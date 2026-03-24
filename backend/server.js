@@ -1,8 +1,8 @@
-const express = require('express');
-const cors = require('cors');
-const { GoogleSpreadsheet } = require('google-spreadsheet');
-const { JWT } = require('google-auth-library');
-const fs = require('fs');
+import express from 'express';
+import cors from 'cors';
+import { GoogleSpreadsheet } from 'google-spreadsheet';
+import { JWT } from 'google-auth-library';
+import fs from 'fs';
 
 const app = express();
 app.use(cors());
@@ -590,4 +590,4 @@ if (!process.env.VERCEL) {
   });
 }
 
-module.exports = app;
+export default app;
