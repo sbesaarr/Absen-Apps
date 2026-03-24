@@ -8,20 +8,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Initialize Google Sheets and heartbeats
-
 // Initialize Google Sheets
 let doc;
 let isReady = false;
 let startupError = null;
-
-app.get('/', (req, res) => {
-  res.json({ 
-    message: "EMS Web API is running on Vercel!", 
-    status: isReady ? "Database Ready" : "Database Not Ready",
-    error: startupError
-  });
-});
+let initPromise = null;
 
 async function initGoogleSheets() {
   try {
@@ -104,20 +95,51 @@ async function initGoogleSheets() {
   } catch (err) {
     startupError = err.message;
     console.error("Failed to initialize Google Sheets:", err.message);
+    throw err; // rethrow to be caught by the middleware
   }
 }
 
-// Call init on startup
-initGoogleSheets();
-
-// --- API Helpers ---
-const generateId = () => Date.now().toString();
-
-// Middleware to check readiness
-app.use((req, res, next) => {
-  if (!isReady) return res.status(503).json({ error: "Google Sheets connection not ready yet." });
+// Ensure connection is ready before handling any requests
+app.use(async (req, res, next) => {
+  if (req.path === '/') return next(); // Allow heartbeat to pass immediately
+  
+  if (!initPromise && !isReady) {
+    initPromise = initGoogleSheets();
+  }
+  
+  if (!isReady) {
+    try {
+      await initPromise;
+    } catch(err) {
+      return res.status(503).json({ error: "Database Connection Failed: " + err.message });
+    }
+  }
   next();
 });
+
+app.get('/', async (req, res) => {
+  // If not initialized, trigger it and wait up to 3 seconds for it to finish
+  if (!initPromise && !isReady) {
+    initPromise = initGoogleSheets();
+  }
+  if (!isReady) {
+    // wait for it without returning immediately
+    try {
+      await Promise.race([
+        initPromise,
+        new Promise(resolve => setTimeout(resolve, 3000))
+      ]);
+    } catch(e) {}
+  }
+
+  res.json({ 
+    message: "EMS Web API is running on Vercel!", 
+    status: isReady ? "Database Ready" : "Database Not Ready (Still Loading)",
+    error: startupError
+  });
+});
+
+// --- API Helpers ---
 
 // 1. Authentication
 app.post('/api/auth/login', async (req, res) => {
