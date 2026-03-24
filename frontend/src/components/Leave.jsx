@@ -16,7 +16,7 @@ export default function Leave({ user }) {
 
   const fetchLeaves = async () => {
     try {
-      const res = await axios.get(`http://localhost:3000/api/leave/${user.id}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/leave/${user.id}`);
       setLeaves(res.data);
     } catch(err) {}
   };
@@ -26,7 +26,7 @@ export default function Leave({ user }) {
     try {
       const finalReason = urgentWork.trim() ? `${reason} | Urgent Work: ${urgentWork}` : reason;
       
-      await axios.post('http://localhost:3000/api/leave', {
+      await axios.post((import.meta.env.VITE_API_URL || "http://localhost:3000") + '/api/leave', {
         userId: user.id, 
         startDate, 
         endDate, 

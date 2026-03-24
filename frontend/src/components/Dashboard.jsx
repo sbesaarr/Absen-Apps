@@ -19,7 +19,7 @@ export default function Dashboard({ user, onLogout }) {
 
   const fetchAttendances = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/attendance/today');
+      const res = await axios.get((import.meta.env.VITE_API_URL || "http://localhost:3000") + '/api/attendance/today');
       setAttendances(res.data);
     } catch (err) {
       console.error(err);

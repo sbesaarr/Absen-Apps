@@ -12,7 +12,7 @@ export default function AdminLeave({ user }) {
 
   const fetchLeaves = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/admin/leaves');
+      const res = await axios.get((import.meta.env.VITE_API_URL || "http://localhost:3000") + '/api/admin/leaves');
       setLeaves(res.data);
     } catch (err) {
       console.error(err);
@@ -21,7 +21,7 @@ export default function AdminLeave({ user }) {
 
   const handleStatus = async (id, status) => {
     try {
-      await axios.post(`http://localhost:3000/api/admin/leave/${id}/status`, { status });
+      await axios.post(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/admin/leave/${id}/status`, { status });
       fetchLeaves();
     } catch (err) {
       console.error(err);

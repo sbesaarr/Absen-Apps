@@ -22,7 +22,7 @@ export default function AdminEmployees() {
   const fetchEmployees = async () => {
     try {
       // Re-using the existing /api/users endpoint
-      const res = await axios.get('http://localhost:3000/api/users');
+      const res = await axios.get((import.meta.env.VITE_API_URL || "http://localhost:3000") + '/api/users');
       setEmployees(res.data);
     } catch (err) {
       console.error(err);
@@ -38,7 +38,7 @@ export default function AdminEmployees() {
     setLoading(true);
     setError('');
     try {
-      await axios.post('http://localhost:3000/api/users', {
+      await axios.post((import.meta.env.VITE_API_URL || "http://localhost:3000") + '/api/users', {
         ...formData,
         base_salary: parseFloat(formData.base_salary)
       });

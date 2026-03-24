@@ -16,8 +16,8 @@ export default function AdminCalendar() {
     try {
       // Fetch both holidays and leaves
       const [holidaysRes, leavesRes] = await Promise.all([
-        axios.get('http://localhost:3000/api/admin/holidays'),
-        axios.get('http://localhost:3000/api/admin/leaves')
+        axios.get((import.meta.env.VITE_API_URL || "http://localhost:3000") + '/api/admin/holidays'),
+        axios.get((import.meta.env.VITE_API_URL || "http://localhost:3000") + '/api/admin/leaves')
       ]);
 
       const newEvents = [];

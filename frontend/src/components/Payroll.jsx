@@ -7,7 +7,7 @@ export default function Payroll({ user }) {
 
   useEffect(() => {
     // Fetch user's latest mocked/calculated payroll 
-    axios.get(`http://localhost:3000/api/payroll/${user.id}`)
+    axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/payroll/${user.id}`)
       .then(res => setPayroll(res.data))
       .catch(err => console.error(err));
   }, [user.id]);

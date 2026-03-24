@@ -25,7 +25,7 @@ export default function AdminAttendance() {
 
   const fetchAttendances = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/admin/attendances');
+      const res = await axios.get((import.meta.env.VITE_API_URL || "http://localhost:3000") + '/api/admin/attendances');
       setAttendances(res.data);
     } catch (err) {
       console.error(err);
@@ -34,7 +34,7 @@ export default function AdminAttendance() {
 
   const fetchSummary = async () => {
     try {
-      const res = await axios.get(`http://localhost:3000/api/admin/attendance-summary?start_date=${startDate}&end_date=${endDate}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/admin/attendance-summary?start_date=${startDate}&end_date=${endDate}`);
       setSummary(res.data);
     } catch (err) {
       console.error(err);

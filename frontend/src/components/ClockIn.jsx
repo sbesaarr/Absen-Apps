@@ -22,7 +22,7 @@ export default function ClockIn({ user, onLogout }) {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await axios.get(`http://localhost:3000/api/attendance/status/${user.id}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/attendance/status/${user.id}`);
       setRecord(res.data);
     } catch (err) {
       console.error(err);
@@ -38,7 +38,7 @@ export default function ClockIn({ user, onLogout }) {
 
   const fetchUserLeaves = async () => {
     try {
-      const res = await axios.get(`http://localhost:3000/api/leave/${user.id}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/leave/${user.id}`);
       const dismissed = JSON.parse(localStorage.getItem('dismissedLeaves') || '[]');
       setActiveLeaves(res.data.filter(l => !dismissed.includes(l.id)));
     } catch (err) { }
@@ -64,7 +64,7 @@ export default function ClockIn({ user, onLogout }) {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
             try {
-              const res = await axios.post('http://localhost:3000/api/attendance/clock-in', {
+              const res = await axios.post((import.meta.env.VITE_API_URL || "http://localhost:3000") + '/api/attendance/clock-in', {
                 userId: user.id,
                 lat: position.coords.latitude,
                 lng: position.coords.longitude
@@ -91,7 +91,7 @@ export default function ClockIn({ user, onLogout }) {
       if (type === 'break-end') url = '/api/attendance/break-end';
       if (type === 'clock-out') url = '/api/attendance/clock-out';
 
-      const res = await axios.post(`http://localhost:3000${url}`, { recordId: record.id, userId: user.id });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}${url}`, { recordId: record.id, userId: user.id });
       setSuccess(res.data.message);
       fetchStatus();
     } catch (err) {

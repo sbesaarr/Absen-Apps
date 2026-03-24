@@ -13,7 +13,7 @@ export default function AdminHolidays() {
 
   const fetchHolidays = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/admin/holidays');
+      const res = await axios.get((import.meta.env.VITE_API_URL || "http://localhost:3000") + '/api/admin/holidays');
       setHolidays(res.data);
     } catch (err) {
       console.error(err);
@@ -23,7 +23,7 @@ export default function AdminHolidays() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3000/api/admin/holidays', { date, description });
+      await axios.post((import.meta.env.VITE_API_URL || "http://localhost:3000") + '/api/admin/holidays', { date, description });
       setDate('');
       setDescription('');
       fetchHolidays();
@@ -34,7 +34,7 @@ export default function AdminHolidays() {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:3000/api/admin/holidays/${id}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/admin/holidays/${id}`);
       fetchHolidays();
     } catch (err) {
       console.error(err);
