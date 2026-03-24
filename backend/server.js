@@ -8,20 +8,29 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Root route for Vercel heartbeat 
-app.get('/', (req, res) => {
-  res.json({ message: "EMS Web API is running on Vercel!", status: isReady ? "Database Ready" : "Database Not Ready" });
-});
+// Initialize Google Sheets and heartbeats
 
 // Initialize Google Sheets
 let doc;
 let isReady = false;
+let startupError = null;
+
+app.get('/', (req, res) => {
+  res.json({ 
+    message: "EMS Web API is running on Vercel!", 
+    status: isReady ? "Database Ready" : "Database Not Ready",
+    error: startupError
+  });
+});
 
 async function initGoogleSheets() {
   try {
     let creds;
     if (process.env.GOOGLE_CREDENTIALS) {
       creds = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+      if (creds.private_key) {
+        creds.private_key = creds.private_key.replace(/\\n/g, '\n');
+      }
     } else {
       const credsStr = fs.readFileSync('./google-credentials.json', 'utf8');
       creds = JSON.parse(credsStr);
@@ -93,6 +102,7 @@ async function initGoogleSheets() {
     isReady = true;
     console.log("Database Engine (Google Sheets) Ready.");
   } catch (err) {
+    startupError = err.message;
     console.error("Failed to initialize Google Sheets:", err.message);
   }
 }
