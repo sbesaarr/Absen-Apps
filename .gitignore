@@ -1,0 +1,6 @@
+node_modules/
+.env
+backend/google-credentials.json
+frontend/dist/
+push_error.txt
+push_error_utf8.txt
