@@ -8,6 +8,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Root route for Vercel heartbeat 
+app.get('/', (req, res) => {
+  res.json({ message: "EMS Web API is running on Vercel!", status: isReady ? "Database Ready" : "Database Not Ready" });
+});
+
 // Initialize Google Sheets
 let doc;
 let isReady = false;
