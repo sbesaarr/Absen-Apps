@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Users, Clock, AlertCircle, CheckCircle, LogOut, LayoutDashboard, CalendarDays, Calendar as CalIcon } from 'lucide-react';
+import { Users, Clock, AlertCircle, CheckCircle, LogOut, LayoutDashboard, CalendarDays, Calendar as CalIcon, Menu, X } from 'lucide-react';
 import AdminAttendance from './AdminAttendance';
 import AdminLeave from './AdminLeave';
 import AdminEmployees from './AdminEmployees';
@@ -10,7 +10,13 @@ import AdminCalendar from './AdminCalendar';
 export default function Dashboard({ user, onLogout }) {
   const [attendances, setAttendances] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setIsSidebarOpen(false);
+  };
+
   useEffect(() => {
     if (activeTab === 'overview') {
       fetchAttendances();
@@ -31,21 +37,29 @@ export default function Dashboard({ user, onLogout }) {
 
   return (
     <div className="app-container">
+      {/* Sidebar Overflow Overlay */}
+      {isSidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <div className="sidebar">
-        <div className="sidebar-header">
+      <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+        <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div className="sidebar-logo">
             <div className="sidebar-logo-icon">EMS</div>
             <span>WorkSpace</span>
           </div>
+          <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(false)}>
+            <X size={24} />
+          </button>
         </div>
         <div className="sidebar-nav">
-          <a href="#" className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveTab('overview'); }}><LayoutDashboard size={20} /> Dashboard</a>
-          <a href="#" className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveTab('calendar'); }}><CalIcon size={20} /> Calendar</a>
-          <a href="#" className={`nav-item ${activeTab === 'attendance' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveTab('attendance'); }}><Clock size={20} /> Attendance</a>
-          <a href="#" className={`nav-item ${activeTab === 'leave' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveTab('leave'); }}><AlertCircle size={20} /> Leave Requests</a>
-          <a href="#" className={`nav-item ${activeTab === 'employees' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveTab('employees'); }}><Users size={20} /> Employees</a>
-          <a href="#" className={`nav-item ${activeTab === 'holidays' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveTab('holidays'); }}><CalendarDays size={20} /> Holidays</a>
+          <a href="#" className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('overview'); }}><LayoutDashboard size={20} /> Dashboard</a>
+          <a href="#" className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('calendar'); }}><CalIcon size={20} /> Calendar</a>
+          <a href="#" className={`nav-item ${activeTab === 'attendance' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('attendance'); }}><Clock size={20} /> Attendance</a>
+          <a href="#" className={`nav-item ${activeTab === 'leave' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('leave'); }}><AlertCircle size={20} /> Leave Requests</a>
+          <a href="#" className={`nav-item ${activeTab === 'employees' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('employees'); }}><Users size={20} /> Employees</a>
+          <a href="#" className={`nav-item ${activeTab === 'holidays' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('holidays'); }}><CalendarDays size={20} /> Holidays</a>
         </div>
         <div className="sidebar-footer">
           <div className="nav-item" onClick={onLogout} style={{ cursor: 'pointer', color: 'var(--danger)' }}>
@@ -56,6 +70,12 @@ export default function Dashboard({ user, onLogout }) {
 
       {/* Main Content */}
       <div className="main-content">
+        <div className="mobile-header-toggle">
+          <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}>
+            <Menu size={24} />
+          </button>
+          <span className="mobile-header-title">EMS WorkSpace</span>
+        </div>
         {activeTab === 'overview' && (
           <>
             <div className="dashboard-header">
