@@ -139,6 +139,11 @@ app.get('/', async (req, res) => {
   });
 });
 
+// --- Helpers ---
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
 // --- API Helpers ---
 
 // 1. Authentication
