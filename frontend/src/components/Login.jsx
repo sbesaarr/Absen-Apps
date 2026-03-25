@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { LogIn } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 export default function Login({ onLogin }) {
-  const [email, setEmail] = useState('admin@ems.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -16,7 +16,7 @@ export default function Login({ onLogin }) {
       const res = await axios.post((import.meta.env.VITE_API_URL || "http://localhost:3000") + '/api/auth/login', { email, password });
       onLogin(res.data.user);
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      setError(err.response?.data?.error || 'Login gagal. Cek email & password.');
     } finally {
       setLoading(false);
     }
@@ -24,44 +24,77 @@ export default function Login({ onLogin }) {
 
   return (
     <div className="auth-container">
-      <div className="auth-box glass-card">
-        <h1 className="auth-title">Welcome Back</h1>
-        <p className="auth-subtitle">Sign in to your account</p>
-        
-        {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '14px' }}>{error}</div>}
-        
+      <div className="auth-box glass-card animate-in">
+        {/* Logo */}
+        <div className="auth-logo">
+          <div className="auth-logo-icon">
+            <Zap size={20} color="white" fill="white" />
+          </div>
+          <span style={{ fontWeight: 800, fontSize: '18px' }}>EMS WorkSpace</span>
+        </div>
+
+        <h1 className="auth-title">Welcome Back! 👋</h1>
+        <p className="auth-subtitle">Masuk ke akun kamu dan mulai hari ini</p>
+
+        {error && (
+          <div style={{
+            background: 'rgba(255,107,107,0.1)',
+            border: '1px solid rgba(255,107,107,0.3)',
+            borderRadius: '12px',
+            padding: '12px 16px',
+            color: '#ff6b6b',
+            fontSize: '13px',
+            marginBottom: '20px',
+            fontWeight: 500
+          }}>
+            ⚠️ {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Email</label>
-            <input 
-              type="email" 
-              className="input-field" 
+            <input
+              type="email"
+              className="input-field"
+              placeholder="kamu@ems.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required 
+              required
             />
           </div>
           <div className="form-group">
             <label className="form-label">Password</label>
-            <input 
-              type="password" 
-              className="input-field" 
+            <input
+              type="password"
+              className="input-field"
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required 
+              required
             />
           </div>
-          
-          <button type="submit" className="btn-primary" disabled={loading} style={{ marginTop: '32px' }}>
-            <LogIn size={20} />
-            {loading ? 'Signing in...' : 'Sign In'}
+
+          <button type="submit" className="btn-primary" disabled={loading} style={{ marginTop: '24px' }}>
+            {loading ? <span className="spinner" /> : null}
+            {loading ? 'Masuk...' : '🚀 Sign In'}
           </button>
         </form>
-        
-        <div style={{ marginTop: '24px', fontSize: '13px', color: 'var(--text-muted)' }}>
-          <p>Demo accounts:</p>
-          <p>Admin: admin@ems.com / admin123</p>
-          <p>Employee: employee@ems.com / emp123</p>
+
+        <div style={{
+          marginTop: '24px',
+          padding: '16px',
+          borderRadius: '14px',
+          background: 'rgba(124,58,237,0.08)',
+          border: '1px solid rgba(124,58,237,0.2)',
+        }}>
+          <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+            Demo Accounts
+          </p>
+          <p style={{ fontSize: '12px', color: 'var(--text-soft)', lineHeight: '1.8' }}>
+            Admin: <span style={{ color: '#a78bfa', fontWeight: 600 }}>admin@ems.com</span> / admin123<br />
+            Employee: <span style={{ color: '#a78bfa', fontWeight: 600 }}>employee@ems.com</span> / emp123
+          </p>
         </div>
       </div>
     </div>

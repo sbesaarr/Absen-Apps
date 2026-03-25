@@ -44,26 +44,37 @@ export default function Dashboard({ user, onLogout }) {
 
       {/* Sidebar */}
       <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="sidebar-header">
           <div className="sidebar-logo">
-            <div className="sidebar-logo-icon">EMS</div>
-            <span>WorkSpace</span>
+            <div className="sidebar-logo-icon">⚡</div>
+            <span>EMS WorkSpace</span>
           </div>
           <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(false)}>
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
         <div className="sidebar-nav">
-          <a href="#" className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('overview'); }}><LayoutDashboard size={20} /> Dashboard</a>
-          <a href="#" className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('calendar'); }}><CalIcon size={20} /> Calendar</a>
-          <a href="#" className={`nav-item ${activeTab === 'attendance' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('attendance'); }}><Clock size={20} /> Attendance</a>
-          <a href="#" className={`nav-item ${activeTab === 'leave' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('leave'); }}><AlertCircle size={20} /> Leave Requests</a>
-          <a href="#" className={`nav-item ${activeTab === 'employees' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('employees'); }}><Users size={20} /> Employees</a>
-          <a href="#" className={`nav-item ${activeTab === 'holidays' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('holidays'); }}><CalendarDays size={20} /> Holidays</a>
+          {[
+            { key: 'overview',   icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
+            { key: 'calendar',   icon: <CalIcon size={18} />,         label: 'Calendar' },
+            { key: 'attendance', icon: <Clock size={18} />,           label: 'Attendance' },
+            { key: 'leave',      icon: <AlertCircle size={18} />,     label: 'Leave Requests' },
+            { key: 'employees',  icon: <Users size={18} />,           label: 'Employees' },
+            { key: 'holidays',   icon: <CalendarDays size={18} />,    label: 'Holidays' },
+          ].map(item => (
+            <a
+              key={item.key}
+              href="#"
+              className={`nav-item ${activeTab === item.key ? 'active' : ''}`}
+              onClick={(e) => { e.preventDefault(); handleTabChange(item.key); }}
+            >
+              {item.icon} {item.label}
+            </a>
+          ))}
         </div>
         <div className="sidebar-footer">
           <div className="nav-item" onClick={onLogout} style={{ cursor: 'pointer', color: 'var(--danger)' }}>
-            <LogOut size={20} /> Logout
+            <LogOut size={18} /> Logout
           </div>
         </div>
       </div>

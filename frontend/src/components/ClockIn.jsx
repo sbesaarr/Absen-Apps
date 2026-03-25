@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { LogOut, Home, Calendar, CreditCard, User, MapPin, Coffee, CheckCircle } from 'lucide-react';
+import { LogOut, Home, Calendar, CreditCard, User, CheckCircle, Zap, Coffee, Clock } from 'lucide-react';
 import axios from 'axios';
 import Leave from './Leave';
 import Payroll from './Payroll';
 import Profile from './Profile';
+
+const API = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export default function ClockIn({ user, onLogout }) {
   const [loading, setLoading] = useState(false);
@@ -22,7 +24,7 @@ export default function ClockIn({ user, onLogout }) {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/attendance/status/${user.id}`);
+      const res = await axios.get(`${API}/api/attendance/status/${user.id}`);
       setRecord(res.data);
     } catch (err) {
       console.error(err);
@@ -38,10 +40,10 @@ export default function ClockIn({ user, onLogout }) {
 
   const fetchUserLeaves = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/leave/${user.id}`);
+      const res = await axios.get(`${API}/api/leave/${user.id}`);
       const dismissed = JSON.parse(localStorage.getItem('dismissedLeaves') || '[]');
       setActiveLeaves(res.data.filter(l => !dismissed.includes(l.id)));
-    } catch (err) { }
+    } catch (err) {}
   };
 
   const dismissLeave = (leaveId) => {
@@ -59,12 +61,12 @@ export default function ClockIn({ user, onLogout }) {
     try {
       if (type === 'clock-in') {
         if (!navigator.geolocation) {
-          throw new Error('Geolocation is not supported by your browser');
+          throw new Error('Geolocation tidak didukung browser ini');
         }
         navigator.geolocation.getCurrentPosition(
           async (position) => {
             try {
-              const res = await axios.post((import.meta.env.VITE_API_URL || "http://localhost:3000") + '/api/attendance/clock-in', {
+              const res = await axios.post(`${API}/api/attendance/clock-in`, {
                 userId: user.id,
                 lat: position.coords.latitude,
                 lng: position.coords.longitude
@@ -72,207 +74,238 @@ export default function ClockIn({ user, onLogout }) {
               setSuccess(res.data.message);
               fetchStatus();
             } catch (err) {
-              setError(err.response?.data?.error || 'Failed to clock in');
+              setError(err.response?.data?.error || 'Gagal clock in');
             } finally {
               setLoading(false);
             }
           },
-          (err) => {
-            setError('Unable to retrieve your location');
+          () => {
+            setError('Tidak bisa mengambil lokasi kamu');
             setLoading(false);
           }
         );
-        return; // Early return because async callback
+        return;
       }
 
-      // Other actions
       let url = '';
       if (type === 'break-start') url = '/api/attendance/break-start';
-      if (type === 'break-end') url = '/api/attendance/break-end';
-      if (type === 'clock-out') url = '/api/attendance/clock-out';
+      if (type === 'break-end')   url = '/api/attendance/break-end';
+      if (type === 'clock-out')   url = '/api/attendance/clock-out';
 
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}${url}`, { recordId: record.id, userId: user.id });
+      const res = await axios.post(`${API}${url}`, { recordId: record?.id, userId: user.id });
       setSuccess(res.data.message);
       fetchStatus();
     } catch (err) {
-      setError(err.response?.data?.error || 'Action failed');
+      setError(err.response?.data?.error || 'Gagal melakukan aksi');
     } finally {
       if (type !== 'clock-in') setLoading(false);
     }
   };
 
-  const renderActionButtons = () => {
-    if (statusLoading) return <h2 style={{ color: 'var(--text-muted)' }}>Loading...</h2>;
-
+  // ── Clock button configs per state
+  const getClockConfig = () => {
+    if (statusLoading) return null;
     if (!record || !record.clockedIn) {
-      return (
-        <button 
-          className="clock-btn" 
-          onClick={() => handleAction('clock-in')} 
-          disabled={loading || success}
-        >
-          {loading ? <h2>...</h2> : <><h2>Clock In</h2><p>Start Shift</p></>}
-        </button>
-      );
+      return {
+        label: 'Clock In',
+        sub: 'Mulai Shift ✨',
+        gradient: 'var(--grad-primary)',
+        shadowColor: 'rgba(255,45,120,0.5)',
+        pulse: '0 0 0 0 rgba(255,45,120,0.4)',
+        action: 'clock-in',
+        ringColors: '#ff2d78, #7c3aed, #06caf4, #ff2d78',
+      };
     }
-
-    if (record.clock_out) {
-      return (
-        <div style={{ textAlign: 'center', color: 'var(--success)' }}>
-          <CheckCircle size={64} style={{ margin: '0 auto 16px' }} />
-          <h2>Shift Completed!</h2>
-          <p style={{ marginTop: '8px', color: 'var(--text-muted)' }}>Clocked out: {new Date(record.clock_out).toLocaleTimeString()}</p>
-        </div>
-      );
-    }
-
+    if (record.clock_out) return null; // show completed UI
     if (!record.break_start) {
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <button 
-            className="clock-btn" 
-            style={{ width: '220px', height: '220px', background: 'linear-gradient(135deg, #f59e0b, #d97706)' }} 
-            onClick={() => handleAction('break-start')} 
-            disabled={loading}
-          >
-            {loading ? <h2>...</h2> : <><h2>Start Break</h2><p>Take a break</p></>}
-          </button>
-        </div>
-      );
+      return {
+        label: 'Break',
+        sub: 'Istirahat dulu ☕',
+        gradient: 'var(--grad-warm)',
+        shadowColor: 'rgba(251,191,36,0.5)',
+        pulse: '0 0 0 0 rgba(251,191,36,0.4)',
+        action: 'break-start',
+        ringColors: '#fbbf24, #ff6b6b, #fbbf24',
+      };
     }
-
     if (record.break_start && !record.break_end) {
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <button 
-            className="clock-btn" 
-            style={{ width: '220px', height: '220px', background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 0 0 0 rgba(16, 185, 129, 0.4)' }} 
-            onClick={() => handleAction('break-end')} 
-            disabled={loading}
-          >
-            {loading ? <h2>...</h2> : <><h2>End Break</h2><p>Back to work</p></>}
-          </button>
-        </div>
-      );
+      return {
+        label: 'End Break',
+        sub: 'Balik kerja 💪',
+        gradient: 'var(--grad-green)',
+        shadowColor: 'rgba(163,230,53,0.4)',
+        pulse: '0 0 0 0 rgba(163,230,53,0.4)',
+        action: 'break-end',
+        ringColors: '#a3e635, #06caf4, #a3e635',
+      };
     }
-
     if (record.break_end && !record.clock_out) {
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-          <button 
-            className="clock-btn" 
-            style={{ width: '220px', height: '220px', background: 'linear-gradient(135deg, #ef4444, #b91c1c)', boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.4)' }} 
-            onClick={() => handleAction('clock-out')} 
-            disabled={loading}
-          >
-            {loading ? <h2>...</h2> : <><h2>Clock Out</h2><p>End Shift</p></>}
-          </button>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Break ended at {new Date(record.break_end).toLocaleTimeString()}</p>
-        </div>
-      );
+      return {
+        label: 'Clock Out',
+        sub: 'Selesai shift 🎉',
+        gradient: 'var(--grad-danger)',
+        shadowColor: 'rgba(255,45,120,0.5)',
+        pulse: '0 0 0 0 rgba(255,107,107,0.4)',
+        action: 'clock-out',
+        ringColors: '#ff6b6b, #ff2d78, #ff6b6b',
+      };
     }
+    return null;
   };
+
+  const config = getClockConfig();
+
+  const fmt = (iso) => iso ? new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null;
+
+  const historyRows = [
+    { label: 'Clock In',    icon: <Zap size={14} />,    value: fmt(record?.clock_in) },
+    { label: 'Break Start', icon: <Coffee size={14} />,  value: fmt(record?.break_start) },
+    { label: 'Break End',   icon: <Coffee size={14} />,  value: fmt(record?.break_end) },
+    { label: 'Clock Out',   icon: <Clock size={14} />,   value: fmt(record?.clock_out) },
+  ];
 
   return (
     <div className="mobile-view">
+      {/* Header */}
       <div className="mobile-header">
         <div className="user-profile">
-          <div className="avatar">
-            {user.full_name.charAt(0)}
-          </div>
-          <div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Welcome back,</p>
-            <h3 style={{ fontSize: '16px', fontWeight: '600' }}>{user.full_name}</h3>
+          <div className="avatar">{user.full_name.charAt(0)}</div>
+          <div className="user-info">
+            <p>Welcome back,</p>
+            <h3>{user.full_name}</h3>
           </div>
         </div>
-        <button onClick={onLogout} style={{ background: 'none', border:'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-          <LogOut size={20} />
+        <button className="logout-btn" onClick={onLogout} title="Logout">
+          <LogOut size={17} />
         </button>
       </div>
 
       {activeTab === 'home' && (
         <>
-          {activeLeaves.length > 0 && (
-            <div style={{ padding: '24px 24px 0 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {activeLeaves.map(l => (
-                <div key={l.id} className="glass-card" style={{ padding: '16px', borderRadius: '12px', border: `1px solid ${l.status === 'APPROVED' ? 'rgba(16, 185, 129, 0.3)' : l.status === 'REJECTED' ? 'rgba(239, 68, 68, 0.3)' : 'var(--border)'}` }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <h4 style={{ fontSize: '15px', fontWeight: 'bold' }}>Leave Request</h4>
-                      <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        {new Date(l.start_date).toLocaleDateString()} - {new Date(l.end_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <span className={`badge ${l.status === 'APPROVED' ? 'on-time' : l.status === 'REJECTED' ? 'absent' : 'late'}`} style={{ fontSize: '11px' }}>{l.status}</span>
-                  </div>
-                  {l.status !== 'PENDING' && (
-                    <button onClick={() => dismissLeave(l.id)} style={{ marginTop: '12px', background: 'var(--bg-secondary)', border: 'none', padding: '6px 12px', borderRadius: '6px', color: 'var(--text)', fontSize: '13px', cursor: 'pointer', width: '100%', fontWeight: '500' }}>
-                      Close Notification
-                    </button>
-                  )}
-                  {l.status === 'PENDING' && (
-                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '12px', textAlign: 'center' }}>Awaiting Manager Approval</p>
-                  )}
+          {/* Leave notifications */}
+          {activeLeaves.length > 0 && activeLeaves.map(l => (
+            <div key={l.id} className="leave-notif animate-in">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: '14px' }}>Leave Request 📋</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {new Date(l.start_date).toLocaleDateString('id-ID')} – {new Date(l.end_date).toLocaleDateString('id-ID')}
+                  </p>
                 </div>
-              ))}
+                <span className={`badge ${l.status === 'APPROVED' ? 'approved' : l.status === 'REJECTED' ? 'rejected' : 'pending'}`}>
+                  {l.status}
+                </span>
+              </div>
+              {l.status !== 'PENDING' && (
+                <button onClick={() => dismissLeave(l.id)} className="btn-secondary" style={{ width:'100%', marginTop:'10px', fontSize:'12px' }}>
+                  Tutup Notifikasi
+                </button>
+              )}
+              {l.status === 'PENDING' && (
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', textAlign:'center' }}>
+                  ⏳ Menunggu persetujuan manager
+                </p>
+              )}
             </div>
-          )}
+          ))}
 
-          <div className="clock-pulse-container">
-            <div style={{ position: 'absolute', top: '20px', textAlign: 'center' }}>
-              <h1 style={{ fontSize: '48px', fontWeight: '700', letterSpacing: '-1px' }}>
-                {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </h1>
-              <p style={{ color: 'var(--text-muted)' }}>
-                {time.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: '60px' }}>
-               {renderActionButtons()}
-            </div>
-
-            {error && <p style={{ color: 'var(--danger)', marginTop: '24px', textAlign: 'center' }}>{error}</p>}
-            {success && <p style={{ color: 'var(--success)', marginTop: '24px', textAlign: 'center' }}>{success}</p>}
+          {/* Time */}
+          <div className="time-display">
+            <div className="time">{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            <div className="date">{time.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
           </div>
 
-          <div className="glass-card" style={{ margin: '24px', padding: '20px', borderRadius: '20px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '16px', color: 'var(--text-muted)' }}>Today's History</h3>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Clock In</span>
-                <span style={{ fontWeight: '600', fontSize: '14px', color: record?.clock_in ? 'var(--text)' : 'var(--text-muted)' }}>{record?.clock_in ? new Date(record.clock_in).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}</span>
+          {/* Clock button */}
+          <div className="clock-pulse-container">
+            {statusLoading ? (
+              <div style={{ textAlign:'center', color: 'var(--text-muted)' }}>
+                <div className="spinner" style={{ width:32, height:32, margin:'0 auto 8px' }} />
+                <p style={{ fontSize:'13px' }}>Loading...</p>
               </div>
-              <div style={{ height: '1px', background: 'var(--border)' }}></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Break Start</span>
-                <span style={{ fontWeight: '600', fontSize: '14px', color: record?.break_start ? 'var(--text)' : 'var(--text-muted)' }}>{record?.break_start ? new Date(record.break_start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}</span>
+            ) : record?.clock_out ? (
+              <div style={{ textAlign:'center', animation:'fadeIn 0.5s ease' }}>
+                <div style={{
+                  width:130, height:130, borderRadius:'50%',
+                  background:'linear-gradient(135deg, rgba(52,211,153,0.15), rgba(6,202,244,0.15))',
+                  border:'2px solid rgba(52,211,153,0.4)',
+                  display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                  margin:'0 auto 16px', boxShadow:'0 0 40px rgba(52,211,153,0.2)'
+                }}>
+                  <CheckCircle size={44} color="#34d399" />
+                </div>
+                <h2 style={{ fontSize:'20px', fontWeight:800, color:'#34d399' }}>Shift Selesai! 🎉</h2>
+                <p style={{ marginTop:'6px', color:'var(--text-muted)', fontSize:'13px' }}>
+                  Clock out: {fmt(record.clock_out)}
+                </p>
               </div>
-              <div style={{ height: '1px', background: 'var(--border)' }}></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Break End</span>
-                <span style={{ fontWeight: '600', fontSize: '14px', color: record?.break_end ? 'var(--text)' : 'var(--text-muted)' }}>{record?.break_end ? new Date(record.break_end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}</span>
+            ) : config ? (
+              <div className="clock-ring" style={{ '--ring-colors': config.ringColors }}>
+                <style>{`.clock-ring::before { background: conic-gradient(${config.ringColors}); }`}</style>
+                <button
+                  className="clock-btn"
+                  style={{
+                    background: config.gradient,
+                    boxShadow: `0 8px 32px ${config.shadowColor}`,
+                    animation: `clockPulse 2.5s infinite`,
+                  }}
+                  onClick={() => handleAction(config.action)}
+                  disabled={loading || !!success}
+                >
+                  {loading
+                    ? <span className="spinner" />
+                    : <>
+                        <h2>{config.label}</h2>
+                        <p>{config.sub}</p>
+                      </>
+                  }
+                </button>
               </div>
-              <div style={{ height: '1px', background: 'var(--border)' }}></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Clock Out</span>
-                <span style={{ fontWeight: '600', fontSize: '14px', color: record?.clock_out ? 'var(--text)' : 'var(--text-muted)' }}>{record?.clock_out ? new Date(record.clock_out).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}</span>
+            ) : null}
+
+            {error   && <p style={{ color:'var(--danger)',  marginTop:'20px', textAlign:'center', fontSize:'13px', fontWeight:600 }}>⚠️ {error}</p>}
+            {success && <p style={{ color:'var(--success)', marginTop:'20px', textAlign:'center', fontSize:'13px', fontWeight:600 }}>✅ {success}</p>}
+          </div>
+
+          {/* History card */}
+          <div className="history-card">
+            <h3>Today's Activity</h3>
+            {historyRows.map((row, i) => (
+              <div key={i} className="history-row">
+                <div className="history-label">
+                  <div className={`history-dot ${row.value ? 'filled' : ''}`} />
+                  {row.icon}
+                  {row.label}
+                </div>
+                <span className={row.value ? 'history-value' : 'history-value empty'}>
+                  {row.value || '—'}
+                </span>
               </div>
-            </div>
+            ))}
           </div>
         </>
       )}
 
-      {activeTab === 'leave' && <Leave user={user} />}
+      {activeTab === 'leave'   && <Leave   user={user} />}
       {activeTab === 'payroll' && <Payroll user={user} />}
       {activeTab === 'profile' && <Profile user={user} onLogout={onLogout} />}
 
+      {/* Bottom Nav */}
       <div className="bottom-nav">
-        <div className={`bottom-nav-item ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}><Home size={24} /><span>Home</span></div>
-        <div className={`bottom-nav-item ${activeTab === 'leave' ? 'active' : ''}`} onClick={() => setActiveTab('leave')} style={{ cursor: 'pointer' }}><Calendar size={24} /><span>Leave</span></div>
-        <div className={`bottom-nav-item ${activeTab === 'payroll' ? 'active' : ''}`} onClick={() => setActiveTab('payroll')} style={{ cursor: 'pointer' }}><CreditCard size={24} /><span>Payroll</span></div>
-        <div className={`bottom-nav-item ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')} style={{ cursor: 'pointer' }}><User size={24} /><span>Profile</span></div>
+        {[
+          { key:'home',    label:'Home',    icon:<Home    size={22} /> },
+          { key:'leave',   label:'Leave',   icon:<Calendar size={22} /> },
+          { key:'payroll', label:'Payroll', icon:<CreditCard size={22} /> },
+          { key:'profile', label:'Profile', icon:<User   size={22} /> },
+        ].map(item => (
+          <div
+            key={item.key}
+            className={`bottom-nav-item ${activeTab === item.key ? 'active' : ''}`}
+            onClick={() => setActiveTab(item.key)}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
